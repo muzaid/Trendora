@@ -1,0 +1,21 @@
+# Supabase CLI project config (supabase start / supabase db push).
+project_id = "trendora"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "app_public"]
+
+[db]
+port = 54322
+major_version = 16
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true

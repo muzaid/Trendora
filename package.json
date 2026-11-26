@@ -1,0 +1,40 @@
+{
+  "name": "trendora",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TRENDORA competitive social commerce platform (monorepo)",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @trendora/web dev",
+    "build": "pnpm --filter @trendora/web build",
+    "start": "pnpm --filter @trendora/web start",
+    "db:migrate": "tsx packages/db/src/cli/migrate.ts",
+    "db:reset": "tsx packages/db/src/cli/reset.ts",
+    "db:seed": "tsx packages/services/src/seed/cli.ts",
+    "jobs": "tsx workers/jobs/src/runner.ts",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --parallel --filter './packages/*' --filter './workers/*' --filter './apps/web' --filter './tests' typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:rls": "vitest run --project rls",
+    "test:e2e": "playwright test --trace off",
+    "openapi": "tsx packages/contracts/src/openapi-cli.ts > docs/openapi.json",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.19.1",
+    "@types/pg": "8.15.6",
+    "eslint": "9.39.5",
+    "globals": "16.5.0",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.4",
+    "vitest": "4.0.10"
+  }
+}

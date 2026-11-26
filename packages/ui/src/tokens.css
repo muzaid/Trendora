@@ -1,0 +1,18 @@
+:root {
+  --ink: #101022;
+  --violet: #7748EB;
+  --violet-strong: #5B2FD6;
+  --violet-soft: #B9A2F6;
+  --surface: #23233C;
+  --surface-raised: #2E2E4D;
+  --border: #3B3B5C;
+  --text: #FFFFFF;
+  --text-muted: #C4C4D9;
+  --success: #3DDC97;
+  --warning: #FFC857;
+  --danger: #FF6B6B;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --min-target: 44px;
+}

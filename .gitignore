@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.trendora-data/
+test-results/
+playwright-report/
+apps/mobile/.expo/
+.DS_Store
+next-env.d.ts

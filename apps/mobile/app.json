@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "TRENDORA",
+    "slug": "trendora",
+    "scheme": "trendora",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#101022",
+    "ios": { "supportsTablet": false, "bundleIdentifier": "com.trendora.app" },
+    "android": { "package": "com.trendora.app" },
+    "extra": { "apiUrl": "http://localhost:3000" }
+  }
+}

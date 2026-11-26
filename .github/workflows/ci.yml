@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/trendora
+      TEST_DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/postgres
+      APP_URL: http://localhost:3000
+      SANDBOX_MODE: "true"
+      AUTH_JWT_SECRET: ci-auth-secret-0000000000000000000000
+      SIGNING_SECRET: ci-signing-secret-000000000000000000000
+      COUPON_SECRET: ci-coupon-secret-0000000000000000000000
+      MEDIA_DIR: /tmp/trendora-media
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+      - run: pnpm test:integration
+      - run: pnpm test:rls
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: E2E (seeds a fresh database and starts the app)
+        run: pnpm test:e2e
+  mobile:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/mobile } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run typecheck

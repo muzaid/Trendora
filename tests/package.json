@@ -1,0 +1,15 @@
+{
+  "name": "@trendora/tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "typecheck": "tsc --noEmit -p ." },
+  "dependencies": {
+    "@trendora/contracts": "workspace:*",
+    "@trendora/core": "workspace:*",
+    "@trendora/db": "workspace:*",
+    "@trendora/services": "workspace:*",
+    "@trendora/ui": "workspace:*",
+    "pg": "8.16.3"
+  }
+}

@@ -1,0 +1,11 @@
+packages:
+  - "apps/web"
+  - "packages/*"
+  - "workers/*"
+  - "tests"
+# apps/mobile is intentionally installed on its own (Expo toolchain is large and
+# pins its own React Native versions). See apps/mobile/README.md.
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - unrs-resolver
