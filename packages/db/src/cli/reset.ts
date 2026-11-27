@@ -1,3 +1,4 @@
+import '../load-env';
 import { migrate, resetDatabase } from '../migrate';
 
 const url = process.env.DATABASE_URL;

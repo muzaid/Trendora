@@ -1,3 +1,4 @@
+import '@trendora/db/load-env';
 import { createServices, drainOutbox, tick, dailyReconciliation } from '@trendora/services';
 
 /**

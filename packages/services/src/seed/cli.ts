@@ -1,3 +1,4 @@
+import '@trendora/db/load-env';
 import { migrate, resetDatabase } from '@trendora/db';
 import { createServices } from '../container';
 import { seed } from './seed';
