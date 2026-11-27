@@ -3,7 +3,7 @@ import { z } from 'zod';
 import * as api from '@trendora/contracts';
 import { AppError, buildOpenApi } from '@trendora/contracts';
 import {
-  identity, catalog, checkout, payments, orders, campaigns, entries, engagement, ranking, rewards, trust, analytics, agents,
+  identity, catalog, checkout, payments, orders, campaigns, entries, engagement, ranking, rewards, trust, analytics, agents, coupons,
   issueToken, tick, drainOutbox,
 } from '@trendora/services';
 import { fixtureId, SEED_USERS } from '@trendora/services/seed-fixtures';
@@ -18,6 +18,20 @@ const S = () => services();
 const idemKey = (c: RouteCtx) => c.req.headers.get('idempotency-key');
 const Id = z.uuid();
 const p = (c: RouteCtx, k: string) => Id.parse(c.params[k]);
+
+/** Store API key (Bearer trk_…) for the merchant's own systems, else the signed-in staff member. */
+async function redeemer(c: RouteCtx) {
+  const bearer = c.req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1] ?? null;
+  const storeId = p(c, 'storeId');
+  if (!bearer?.startsWith('trk_') && c.actor === null) throw new AppError('UNAUTHENTICATED', 'Sign in or use a store API key');
+  if (!bearer?.startsWith('trk_')) {
+    // Cookie-authenticated staff: same-origin check (CSRF) since this route opts out globally for API-key callers.
+    const origin = c.req.headers.get('origin');
+    const host = c.req.headers.get('x-forwarded-host') ?? c.req.headers.get('host');
+    if (!c.req.headers.get('authorization') && (!origin || new URL(origin).host !== host)) throw new AppError('FORBIDDEN', 'Cross-site request blocked');
+  }
+  return coupons.resolveRedeemer(S(), c.actor, bearer, storeId);
+}
 
 async function runTick(c: RouteCtx) {
   const s = S();
@@ -173,6 +187,14 @@ const routes: Route[] = [
   { method: 'GET', pattern: '/v1/merchant/campaigns/:id/model', handler: async (c) => { const q = c.query(z.object({ unitCostMinor: z.coerce.number().int().min(0).default(2000), otherCostsMinor: z.coerce.number().int().min(0).default(0) })); return analytics.campaignModel(S(), c.actor, p(c, 'id'), q.unitCostMinor, q.otherCostsMinor); } },
   { method: 'GET', pattern: '/v1/merchant/stores/:id/rewards', handler: async (c) => rewards.merchantRewards(S(), c.actor, p(c, 'id')) },
   { method: 'POST', pattern: '/v1/merchant/rewards/:id/fulfill', handler: async (c) => rewards.fulfillReward(S(), c.actor, p(c, 'id'), await c.body(api.FulfillRewardBody)) },
+
+  // ---- Direct coupon redemption (store staff session or store API key `Bearer trk_…`) ----
+  { method: 'POST', pattern: '/v1/stores/:storeId/coupons/lookup', csrf: false, handler: async (c) => { const r = await redeemer(c); const b = await c.body(api.CouponLookupBody.extend({ purchaseMinor: z.number().int().min(1).optional(), eligibleMinor: z.number().int().min(1).optional() })); return coupons.lookupCoupon(S(), r, b); } },
+  { method: 'POST', pattern: '/v1/stores/:storeId/coupons/redeem', csrf: false, handler: async (c) => coupons.redeemDirect(S(), await redeemer(c), await c.body(api.DirectRedeemBody)) },
+  { method: 'GET', pattern: '/v1/merchant/stores/:id/coupon-redemptions', handler: async (c) => coupons.listDirectRedemptions(S(), c.actor, p(c, 'id')) },
+  { method: 'GET', pattern: '/v1/merchant/stores/:id/api-keys', handler: async (c) => coupons.listStoreApiKeys(S(), c.actor, p(c, 'id')) },
+  { method: 'POST', pattern: '/v1/merchant/stores/:id/api-keys', handler: async (c) => coupons.createStoreApiKey(S(), c.actor, p(c, 'id'), (await c.body(api.StoreApiKeyBody)).name) },
+  { method: 'POST', pattern: '/v1/merchant/api-keys/:id/revoke', handler: async (c) => coupons.revokeStoreApiKey(S(), c.actor, p(c, 'id')) },
 
   // ---- AI agents (optional, advisory) ----------------------------------------
   { method: 'POST', pattern: '/v1/agents/runs', handler: async (c) => agents.runAgent(S(), c.actor, await c.body(api.AgentRunBody)) },

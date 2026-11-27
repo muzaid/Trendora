@@ -57,6 +57,7 @@ function RewardsTab({ list }: { list: Awaited<ReturnType<typeof rewards.myReward
               <div className="code" aria-label="Coupon code" data-testid="coupon-code">{r.coupon.code}</div>
               <p className="small">{r.coupon.percentOff}% off (max {money(r.coupon.maxDiscountMinor, r.coupon.currency)}){r.coupon.minSpendMinor ? `, min spend ${money(r.coupon.minSpendMinor, r.coupon.currency)}` : ''} at <Link href={`/stores/${r.coupon.storeSlug}`}>{r.coupon.storeSlug}</Link>. Expires {when(r.coupon.expiresAt)}. Used {r.coupon.usedCount}/{r.coupon.usageLimit}. <span className={`badge ${statusTone(r.coupon.status)}`}>{r.coupon.status}</span></p>
               <p className="small muted">{r.coupon.exclusions}</p>
+              {r.coupon.status === 'ACTIVE' && <p className="small">Use it at checkout on TRENDORA, or show this code when buying directly from <Link href={`/stores/${r.coupon.storeSlug}`}>the store</Link> — in person or on its own website.</p>}
             </div>
           )}
           {r.type === 'PRIZE' && r.status === 'ISSUED' && (

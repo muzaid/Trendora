@@ -27,6 +27,12 @@ P5 partial, P6 advisory agents with validation, logs, budget caps and approvals.
 `packages/services` (modules, adapters, jobs, seed) · `packages/ui` · `apps/web` (UI + `/v1` router) ·
 `apps/mobile` · `workers/jobs` · `tests/*` · `docs/*` · CI (`.github/workflows/ci.yml`), `vercel.json`.
 
+## Update 2026-11-27 — direct coupon redemption
+Shoppers can redeem reward coupons when buying from the business itself. Added migration
+`20261127000005_direct_coupon_redemption.sql` (rollback note inside), `services/modules/coupons.ts`,
+merchant **Coupons** tab, store API keys, 2 unit + 6 integration tests (idempotent receipts, concurrency,
+online-hold interplay, cross-store denial, key scoping/revocation, DB shape constraint). Suite: 73 tests + E2E green.
+
 ## Known defects / limitations
 1. **Sandbox providers only.** Payments and video use labelled sandbox adapters; no real money or CDN.
 2. **Sign-in UI is sandbox-only.** Supabase Auth access tokens are verified server-side and
@@ -40,6 +46,7 @@ P5 partial, P6 advisory agents with validation, logs, budget caps and approvals.
    live API here (no key); no agent evaluation suite yet.
 9. **Amendments** support deadline extensions only; other material changes require cancel + new campaign.
 10. The sandbox clock is platform-wide (by design, sandbox only).
+12. Direct redemptions trust the business's declared purchase/eligible amounts (no POS receipt verification); they are audited and listed per store.
 11. Performance SLOs (p95 < 500 ms, 99.9%) are untested; no load test yet.
 
 ## Next dependency

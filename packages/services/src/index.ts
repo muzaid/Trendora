@@ -22,4 +22,5 @@ export * as rewards from './modules/rewards';
 export * as trust from './modules/trust';
 export * as analytics from './modules/analytics';
 export * as agents from './modules/agents';
+export * as coupons from './modules/coupons';
 export { seed } from './seed/seed';

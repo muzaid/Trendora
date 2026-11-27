@@ -187,3 +187,18 @@ export const AgentDecisionBody = z.object({ decision: z.enum(['APPROVED', 'DISMI
 export const ClockBody = z.object({ offsetMs: z.number().int().min(0).max(400 * 86_400_000) });
 export const SandboxLoginBody = z.object({ handle: z.string().min(3).max(30) });
 export const SandboxPayBody = z.object({ outcome: z.enum(['succeeded', 'failed']) });
+
+// ---- Direct (off-platform) coupon redemption --------------------------------
+const couponCode = z.string().trim().min(4).max(40);
+export const CouponLookupBody = z.object({ code: couponCode });
+export const DirectRedeemBody = z.object({
+  code: couponCode,
+  /** Purchase total at the business, in minor units. */
+  purchaseMinor: z.number().int().min(1).max(1_000_000_000_00),
+  /** Portion of the purchase the coupon applies to (defaults to the full total). */
+  eligibleMinor: z.number().int().min(1).max(1_000_000_000_00).optional(),
+  /** Receipt / order number in the business's own system. Retries with the same value are idempotent. */
+  reference: z.string().trim().min(1).max(120),
+});
+export type DirectRedeemInput = z.infer<typeof DirectRedeemBody>;
+export const StoreApiKeyBody = z.object({ name: z.string().trim().min(1).max(80) });

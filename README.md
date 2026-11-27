@@ -13,7 +13,7 @@ rank-based store coupons.
 | Surface | Highlights |
 | --- | --- |
 | **Consumer web** (`apps/web`) | Vertical video feed (muted, never autoplays audio, sponsor disclosure, product tags, like/share/report/comment/follow), stores & products, server-repriced checkout with hosted (sandbox) payment, challenge **arena** (rules, prizes, eligibility, upload → transcode → submit, live leaderboard with score breakdown, appeals, free alternative entry), profile with orders, entries, rewards, coupon codes, prize claims, notifications, privacy |
-| **Merchant console** | Onboarding, catalog (variants, inventory with optimistic locking, price history, CSV import), campaign builder + preview + launch checklist + prize-funding evidence, orders (ship/deliver/refund), rewards fulfilment & coupon liability, analytics (funnel, attributed revenue, repeat purchase, fraud rate, video-rights consents, contribution margin & sensitivity), staff roles, advisory AI assistants |
+| **Merchant console** | **In-store / own-website coupon redemption** (staff screen + store API keys for the business's website or till), onboarding, catalog (variants, inventory with optimistic locking, price history, CSV import), campaign builder + preview + launch checklist + prize-funding evidence, orders (ship/deliver/refund), rewards fulfilment & coupon liability, analytics (funnel, attributed revenue, repeat purchase, fraud rate, video-rights consents, contribution margin & sensitivity), staff roles, advisory AI assistants |
 | **Platform admin** | Merchant verification, campaign review/publish (rules frozen + hashed), moderation queue, two-reviewer creativity rubric with adjudication, reports/appeals/fraud flags, free-entry approvals, results review & **idempotent finalization**, kill switches, ledger reconciliation, audit log, sandbox clock |
 | **Mobile** (`apps/mobile`) | Expo app: feed, likes, arena leaderboard, rewards/coupons |
 | **API** | Versioned REST under `/v1/*` — Zod-validated, bearer or cookie auth, typed errors `{error:{code,message,requestId}}`, OpenAPI at `/v1/openapi.json` (`docs/openapi.json`) |
@@ -74,6 +74,23 @@ apps/mobile (Expo) ───────┘                │   ▲
 Read **[AGENTS.md](AGENTS.md)** first, then the [ADRs](docs/adr), the
 [dependency graph](docs/dependency-graph.md), [implementation checklist](docs/implementation-checklist.md),
 [runbooks](docs/runbooks.md) and the [progress report](docs/progress-report.md).
+
+## Coupons at the business itself
+
+Reward coupons work on TRENDORA checkout **and** when the shopper buys directly from the business:
+
+- **In store:** Merchant console → **Coupons** → enter code, purchase total and receipt number → *Check code* → *Redeem coupon*.
+  Staff roles OWNER, MANAGER and FULFILLMENT can redeem.
+- **Own website / POS:** the store owner creates an API key (Coupons tab), then the business's system calls
+
+  ```bash
+  curl -X POST $APP_URL/v1/stores/$STORE_ID/coupons/redeem \
+    -H "Authorization: Bearer trk_live_…" -H "Content-Type: application/json" \
+    -d '{"code":"TR-XXXX-XXXX-XXXX","purchaseMinor":5000,"reference":"ORDER-1001"}'
+  ```
+  `/coupons/lookup` previews validity and the discount first. Retrying with the same `reference` returns the
+  original result; a used, expired or other-store code is refused. TRENDORA never handles the money for these
+  sales — it computes the discount and records the redemption.
 
 ## Deploying (Supabase + Vercel)
 

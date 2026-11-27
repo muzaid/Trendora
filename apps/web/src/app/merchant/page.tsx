@@ -1,13 +1,17 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { catalog, campaigns, orders, rewards, agents } from '@trendora/services';
+import { catalog, campaigns, orders, rewards, agents, coupons } from '@trendora/services';
+import { merchantCan } from '@trendora/core';
+import type { MerchantRole } from '@trendora/contracts';
 import { services } from '@/server/runtime';
 import { currentActor } from '@/server/session';
 import { money, when, statusTone } from '@/lib/format';
 import { ActionButton, ApiForm } from '@/components/client';
 import { InventoryAdjust } from './inventory-adjust';
+import { CouponRedeem } from './coupon-redeem';
+import { ApiKeys } from './api-keys';
 
-const TABS = ['campaigns', 'catalog', 'orders', 'rewards', 'team', 'assistant'] as const;
+const TABS = ['campaigns', 'catalog', 'orders', 'coupons', 'rewards', 'team', 'assistant'] as const;
 
 export default async function MerchantPage({ searchParams }: { searchParams: Promise<{ tab?: string; store?: string }> }) {
   const actor = await currentActor();
@@ -31,6 +35,7 @@ export default async function MerchantPage({ searchParams }: { searchParams: Pro
       {tab === 'campaigns' && <CampaignsTab storeId={store.id} list={await campaigns.merchantCampaigns(s, actor, store.id)} />}
       {tab === 'catalog' && <CatalogTab storeId={store.id} currency={store.currency} list={await catalog.merchantCatalog(s, actor, store.id)} />}
       {tab === 'orders' && <OrdersTab list={await orders.merchantOrders(s, actor, store.id)} />}
+      {tab === 'coupons' && <CouponsTab storeId={store.id} currency={store.currency} role={store.org.role as MerchantRole} />}
       {tab === 'rewards' && <RewardsTab data={await rewards.merchantRewards(s, actor, store.id)} />}
       {tab === 'team' && <TeamTab orgId={store.org.id} canManage={store.org.role === 'OWNER'} staff={store.org.role === 'OWNER' ? ((await catalog.listStaff(s, actor, store.org.id)) as { handle: string; displayName: string; role: string }[]) : []} />}
       {tab === 'assistant' && <AssistantTab orgId={store.org.id} campaigns={(await campaigns.merchantCampaigns(s, actor, store.id)).map((c) => ({ id: c.id, title: c.title }))} runs={(await agents.listAgentRuns(s, actor, store.org.id).catch(() => [])) as { id: string; agent: string; provider: string; status: string; output: { recommendations: { title: string; detail: string }[]; risk: { level: string; notes: string }; confidence: number; escalations: string[] } | null; costUsdMicros: number; createdAt: string }[]} />}
@@ -119,6 +124,40 @@ function OrdersTab({ list }: { list: Awaited<ReturnType<typeof orders.merchantOr
         </tr>
       ))}</tbody>
     </table></div>
+  );
+}
+
+async function CouponsTab({ storeId, currency, role }: { storeId: string; currency: string; role: MerchantRole }) {
+  const s = services();
+  const actor = await currentActor();
+  const history = await coupons.listDirectRedemptions(s, actor, storeId);
+  const canRedeem = merchantCan(role, 'coupons.redeem');
+  const canKeys = merchantCan(role, 'apikeys.manage');
+  const keys = canKeys ? await coupons.listStoreApiKeys(s, actor, storeId) : [];
+  return (
+    <div className="stack">
+      <div className="split">
+        <section className="card">
+          <h2 style={{ marginTop: 0 }}>Redeem a coupon in store</h2>
+          <p className="small muted">Shoppers can use their TRENDORA reward coupon when buying directly from you — in your shop, on your own website or by phone. Enter the code and the purchase total; TRENDORA calculates the discount and marks the coupon used.</p>
+          {canRedeem ? <CouponRedeem storeId={storeId} currency={currency} /> : <p className="muted">Your role cannot redeem coupons.</p>}
+        </section>
+        <section className="card">
+          <h2 style={{ marginTop: 0 }}>Website / POS integration</h2>
+          {canKeys ? <ApiKeys storeId={storeId} keys={keys} appUrl={s.config.APP_URL} /> : <p className="small muted">Only the store owner can manage API keys.</p>}
+        </section>
+      </div>
+      <section>
+        <h2>Direct redemptions</h2>
+        {history.length === 0 && <p className="muted">No coupons redeemed directly yet.</p>}
+        {history.length > 0 && (
+          <div className="table-wrap"><table data-testid="direct-redemptions">
+            <thead><tr><th>When</th><th>Reference</th><th>Code</th><th>Purchase</th><th>Discount</th><th>By</th></tr></thead>
+            <tbody>{history.map((h) => <tr key={h.id}><td className="small">{when(h.redeemedAt)}</td><td>{h.reference}</td><td><code>••••{h.codeLast4}</code><div className="small muted">{h.campaignTitle}</div></td><td>{money(h.purchaseMinor, h.currency)}</td><td>−{money(h.discountMinor, h.currency)}</td><td className="small">{h.redeemedBy}</td></tr>)}</tbody>
+          </table></div>
+        )}
+      </section>
+    </div>
   );
 }
 

@@ -44,7 +44,8 @@ Legend: ✅ done & tested · 🟡 partial / sandbox · ⬜ not started. Task IDs
 - ✅ P4-4 Prize claims + fulfilment evidence; campaign → FULFILLED
 - ✅ P4-5 Notifications (in-app); refund → eligibility review (never silent revoke)
 - ✅ P4-6 Merchant reports (analytics, coupon liability), reconciliation
-- ⬜ P4-7 Email/push notification delivery
+- ✅ P4-7 Direct coupon redemption: shoppers use reward coupons when buying from the business itself (store, own website, POS) — staff console + store API keys, server-computed discount, idempotent per receipt, shared usage limit with online checkout
+- ⬜ P4-8 Email/push notification delivery
 
 ## P5 Growth
 - 🟡 P5-1 Referral attribution — share attribution tracked; payouts deliberately not implemented (post-MVP)

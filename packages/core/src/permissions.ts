@@ -2,14 +2,15 @@ import type { MerchantRole, PlatformRole } from '@trendora/contracts';
 
 export type MerchantPermission =
   | 'org.manage' | 'staff.manage' | 'catalog.write' | 'orders.manage' | 'orders.refund'
-  | 'campaigns.write' | 'campaigns.publish' | 'rewards.fulfill' | 'analytics.read' | 'finance.read' | 'agents.run';
+  | 'campaigns.write' | 'campaigns.publish' | 'rewards.fulfill' | 'analytics.read' | 'finance.read' | 'agents.run'
+  | 'coupons.redeem' | 'apikeys.manage';
 
 const MATRIX: Record<MerchantRole, MerchantPermission[]> = {
-  OWNER: ['org.manage', 'staff.manage', 'catalog.write', 'orders.manage', 'orders.refund', 'campaigns.write', 'campaigns.publish', 'rewards.fulfill', 'analytics.read', 'finance.read', 'agents.run'],
-  MANAGER: ['catalog.write', 'orders.manage', 'orders.refund', 'campaigns.write', 'rewards.fulfill', 'analytics.read', 'finance.read', 'agents.run'],
+  OWNER: ['org.manage', 'staff.manage', 'catalog.write', 'orders.manage', 'orders.refund', 'campaigns.write', 'campaigns.publish', 'rewards.fulfill', 'analytics.read', 'finance.read', 'agents.run', 'coupons.redeem', 'apikeys.manage'],
+  MANAGER: ['catalog.write', 'orders.manage', 'orders.refund', 'campaigns.write', 'rewards.fulfill', 'analytics.read', 'finance.read', 'agents.run', 'coupons.redeem'],
   CATALOG: ['catalog.write'],
   CAMPAIGNS: ['campaigns.write', 'analytics.read', 'agents.run'],
-  FULFILLMENT: ['orders.manage', 'rewards.fulfill'],
+  FULFILLMENT: ['orders.manage', 'rewards.fulfill', 'coupons.redeem'],
   ANALYST: ['analytics.read'],
 };
 

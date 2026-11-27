@@ -20,6 +20,8 @@ const routes: { method: string; path: string; summary: string; body?: z.ZodType;
   { method: 'get', path: '/v1/me/rewards', summary: 'Own rewards and coupons', auth: true },
   { method: 'post', path: '/v1/rewards/{id}/claim', summary: 'Claim prize', body: api.ClaimRewardBody, auth: true },
   { method: 'post', path: '/v1/appeals', summary: 'File appeal', body: api.AppealBody, auth: true },
+  { method: 'post', path: '/v1/stores/{storeId}/coupons/lookup', summary: 'Check a reward coupon for a direct (in-store / own website) purchase; staff session or store API key', body: api.CouponLookupBody, auth: true },
+  { method: 'post', path: '/v1/stores/{storeId}/coupons/redeem', summary: 'Redeem a reward coupon for a direct purchase; idempotent per receipt reference', body: api.DirectRedeemBody, auth: true },
   { method: 'post', path: '/v1/admin/campaigns/{id}/finalize', summary: 'Finalize ranking and issue rewards', body: api.FinalizeBody, auth: true, idempotent: true },
 ];
 

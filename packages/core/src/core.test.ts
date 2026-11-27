@@ -4,7 +4,7 @@ import {
   allocateMinor, bpsOfMinor, percentOfMinor, campaignMachine, entryMachine, orderMachine, timeDrivenStatus, windows,
   smoothedRate, normalizeRate, creativityScore, rankEntries, trendScore, isMeaningfulComment,
   validateTiers, planRewards, tierForRank, requiredPrizeFunding, evaluateCoupon, couponCodeFor, hashCouponCode,
-  paymentJournal, refundJournal, assertBalanced, priceCart, reachedMilestone, participantIneligibility,
+  evaluateDirectRedemption, paymentJournal, refundJournal, assertBalanced, priceCart, reachedMilestone, participantIneligibility,
   eventInvalidReason, signWebhook, verifyWebhook, signToken, verifyToken, canonicalJson, campaignContribution, merchantCan, platformCan,
 } from './index';
 import { defaultRules } from '@trendora/contracts';
@@ -151,6 +151,25 @@ describe('coupons', () => {
     expect(couponCodeFor('secret', 'reward-1')).toBe(c);
     expect(couponCodeFor('other', 'reward-1')).not.toBe(c);
     expect(hashCouponCode(` ${c.toLowerCase()} `)).toBe(hashCouponCode(c));
+  });
+});
+
+describe('direct (in-store) coupon redemption', () => {
+  const now = new Date('2027-01-01T00:00:00Z');
+  const c = { storeId: 's1', percentOff: 50, maxDiscountMinor: 3000, minSpendMinor: 2000, currency: 'USD', allowedVariantIds: null, excludedVariantIds: [], usageLimit: 1, usedCount: 0, pendingCount: 0, expiresAt: new Date('2027-02-01'), status: 'ACTIVE' as const };
+  const ctx = { storeId: 's1', currency: 'USD', purchaseMinor: 4000, eligibleMinor: 4000, now };
+  it('computes the discount from the declared eligible amount, capped', () => {
+    expect(evaluateDirectRedemption(c, ctx)).toBe(2000);
+    expect(evaluateDirectRedemption(c, { ...ctx, purchaseMinor: 10000, eligibleMinor: 10000 })).toBe(3000);
+    expect(evaluateDirectRedemption(c, { ...ctx, eligibleMinor: 1000 })).toBe(500);
+  });
+  it('rejects wrong store, expiry, min spend, used codes and bad amounts', () => {
+    expect(() => evaluateDirectRedemption(c, { ...ctx, storeId: 's2' })).toThrow(/issuing store/);
+    expect(() => evaluateDirectRedemption(c, { ...ctx, now: new Date('2027-03-01') })).toThrow(/expired/);
+    expect(() => evaluateDirectRedemption(c, { ...ctx, purchaseMinor: 1500, eligibleMinor: 1500 })).toThrow(/minimum spend/);
+    expect(() => evaluateDirectRedemption({ ...c, usedCount: 1 }, ctx)).toThrow(/already been used/);
+    expect(() => evaluateDirectRedemption({ ...c, pendingCount: 1 }, ctx)).toThrow(/already been used/);
+    expect(() => evaluateDirectRedemption(c, { ...ctx, eligibleMinor: 5000 })).toThrow(/Eligible amount/);
   });
 });
 

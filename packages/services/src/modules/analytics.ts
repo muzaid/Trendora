@@ -30,7 +30,9 @@ export async function campaignAnalytics(ctx: ServiceContext, actor: Actor | null
   );
   const reuseConsent = await one(`select count(*)::int as n from entries where campaign_id = $1 and status = 'APPROVED' and commercial_reuse_consent`);
   const couponRedemptions = await one(`select count(*)::int as n from coupon_redemptions cr join coupons co on co.id = cr.coupon_id join rewards r on r.id = co.reward_id where r.campaign_id = $1 and cr.status = 'REDEEMED'`);
-  const couponRevenue = await one(`select coalesce(sum(o.total_minor),0)::bigint as n from coupon_redemptions cr join coupons co on co.id = cr.coupon_id join rewards r on r.id = co.reward_id join orders o on o.id = cr.order_id where r.campaign_id = $1 and cr.status = 'REDEEMED'`);
+  // Coupon-attributed revenue: TRENDORA orders (order total) + direct store purchases (declared total, net of discount).
+  const couponRevenue = await one(`select coalesce(sum(coalesce(o.total_minor, cr.purchase_minor - cr.discount_minor)),0)::bigint as n from coupon_redemptions cr join coupons co on co.id = cr.coupon_id join rewards r on r.id = co.reward_id left join orders o on o.id = cr.order_id where r.campaign_id = $1 and cr.status = 'REDEEMED'`);
+  const directRedemptions = await one(`select count(*)::int as n from coupon_redemptions cr join coupons co on co.id = cr.coupon_id join rewards r on r.id = co.reward_id where r.campaign_id = $1 and cr.channel = 'STORE_DIRECT'`);
   const tiers = await tiersOf(q, campaignId);
   const prizes = tiers.filter((t) => t.type === 'PRIZE').reduce((s, t) => s + t.valueMinor * ((t.rankTo ?? t.rankFrom) - t.rankFrom + 1), 0);
   const commission = Math.floor((gross * ctx.config.PLATFORM_COMMISSION_BPS + 5000) / 10_000);
@@ -43,7 +45,7 @@ export async function campaignAnalytics(ctx: ServiceContext, actor: Actor | null
       fraudRate: impressions + invalidEvents ? invalidEvents / (impressions + invalidEvents) : 0,
       repeatPurchaseRate: paidOrders ? repeatBuyers / paidOrders : 0,
     },
-    revenue: { units, grossMinor: gross, refundedMinor: refunded, commissionMinor: commission, prizesMinor: prizes, contributionBeforeCogsMinor: gross - refunded - commission - prizes, couponRedemptions, couponAttributedRevenueMinor: couponRevenue },
+    revenue: { units, grossMinor: gross, refundedMinor: refunded, commissionMinor: commission, prizesMinor: prizes, contributionBeforeCogsMinor: gross - refunded - commission - prizes, couponRedemptions, directStoreRedemptions: directRedemptions, couponAttributedRevenueMinor: couponRevenue },
     trust: { invalidEvents, fraudFlags: flags },
     videoRights: { approvedEntries: approved, commercialReuseConsents: reuseConsent },
   };
